@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f1729">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.svg">
+  <title>Task Capture</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', system-ui, sans-serif;
+      background: #0f1729;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      text-align: center;
+      color: #f8fafc;
+    }
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid #2d3748;
+      background: #1a2332;
+      color: #f8fafc;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #4a9eff;
+    }
+    .mic-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      border: 1px solid #2d3748;
+      background: #1a2332;
+      color: #94a3b8;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .mic-btn.listening {
+      background: #dc2626;
+      border-color: #dc2626;
+      color: white;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .chip {
+      padding: 10px 16px;
+      border-radius: 20px;
+      border: 2px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #1a2332;
+      color: #94a3b8;
+    }
+    .chip.selected { color: white; }
+    .chip[data-value="Chef Collective"] { border-color: #2d3748; }
+    .chip[data-value="Chef Collective"].selected { background: #ea580c; border-color: #ea580c; }
+    .chip[data-value="Mother Tree"] { border-color: #2d3748; }
+    .chip[data-value="Mother Tree"].selected { background: #2563eb; border-color: #2563eb; }
+    .chip[data-value="Castanea Creek"] { border-color: #2d3748; }
+    .chip[data-value="Castanea Creek"].selected { background: #7c3aed; border-color: #7c3aed; }
+    .chip[data-value="Personal"] { border-color: #2d3748; }
+    .chip[data-value="Personal"].selected { background: #16a34a; border-color: #16a34a; }
+    .chip[data-value="Urgent"] { border-color: #2d3748; }
+    .chip[data-value="Urgent"].selected { background: #dc2626; border-color: #dc2626; }
+    .chip[data-value="High"] { border-color: #2d3748; }
+    .chip[data-value="High"].selected { background: #ea580c; border-color: #ea580c; }
+    .chip[data-value="Medium"] { border-color: #2d3748; }
+    .chip[data-value="Medium"].selected { background: #2563eb; border-color: #2563eb; }
+    .capture-btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      background: #4a9eff;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .capture-btn:active { transform: scale(0.98); background: #3b82f6; }
+    .capture-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .status {
+      text-align: center;
+      font-size: 14px;
+      min-height: 20px;
+      color: #64748b;
+    }
+    .status.success { color: #4ade80; }
+    .status.error { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Task Capture</h1>
+
+    <div class="input-row">
+      <input type="text" id="taskInput" placeholder="What needs to be done?" autocomplete="off">
+      <button class="mic-btn" id="micBtn">🎤</button>
+    </div>
+
+    <div>
+      <div class="chip-label">Context</div>
+      <div class="chip-group" id="contextGroup">
+        <button class="chip" data-value="Chef Collective">Chef Collective</button>
+        <button class="chip" data-value="Mother Tree">Mother Tree</button>
+        <button class="chip" data-value="Castanea Creek">Castanea Creek</button>
+        <button class="chip" data-value="Personal">Personal</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="chip-label">Priority</div>
+      <div class="chip-group" id="priorityGroup">
+        <button class="chip" data-value="Urgent">Urgent</button>
+        <button class="chip" data-value="High">High</button>
+        <button class="chip" data-value="Medium">Medium</button>
+      </div>
+    </div>
+
+    <button class="capture-btn" id="captureBtn">Capture</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <script>
+    let selectedContext = null;
+    let selectedPriority = null;
+
+    document.querySelectorAll('#contextGroup .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#contextGroup .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedContext = chip.dataset.value;
+      });
+    });
+
+    document.querySelectorAll('#priorityGroup .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#priorityGroup .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedPriority = chip.dataset.value;
+      });
+    });
+
+    // Voice input
+    const micBtn = document.getElementById('micBtn');
+    const taskInput = document.getElementById('taskInput');
+    let recognition = null;
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onresult = (event) => {
+        taskInput.value = event.results[0][0].transcript;
+        micBtn.classList.remove('listening');
+      };
+
+      recognition.onerror = () => micBtn.classList.remove('listening');
+      recognition.onend = () => micBtn.classList.remove('listening');
+
+      micBtn.addEventListener('click', () => {
+        if (micBtn.classList.contains('listening')) {
+          recognition.stop();
+        } else {
+          recognition.start();
+          micBtn.classList.add('listening');
+        }
+      });
+    } else {
+      micBtn.style.display = 'none';
+    }
+
+    // Capture
+    const captureBtn = document.getElementById('captureBtn');
+    const status = document.getElementById('status');
+
+    captureBtn.addEventListener('click', async () => {
+      const task = taskInput.value.trim();
+      if (!task || !selectedContext || !selectedPriority) {
+        status.textContent = 'Fill in all fields';
+        status.className = 'status error';
+        return;
+      }
+
+      captureBtn.disabled = true;
+      status.textContent = 'Sending...';
+      status.className = 'status';
+
+      try {
+        const res = await fetch('/capture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task, context: selectedContext, priority: selectedPriority })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          status.textContent = 'Captured!';
+          status.className = 'status success';
+          taskInput.value = '';
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+          selectedContext = null;
+          selectedPriority = null;
+          setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 2000);
+        } else {
+          status.textContent = data.error || 'Failed';
+          status.className = 'status error';
+        }
+      } catch (err) {
+        status.textContent = 'Network error';
+        status.className = 'status error';
+      }
+
+      captureBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>
