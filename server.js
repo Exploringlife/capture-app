@@ -3,6 +3,15 @@ const path = require('path');
 
 const app = express();
 app.use(express.json());
+
+// Never cache the HTML — always fetch fresh from server
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.set('Cache-Control', 'no-store');
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 const PERSONAL_DB_ID = '30923c93339c806a8fe4dbfcd74a1f71';
