@@ -27,7 +27,7 @@
       max-width: 400px;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
     h1 {
       font-size: 1.5rem;
@@ -50,9 +50,7 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    input[type="text"]:focus {
-      border-color: #4a9eff;
-    }
+    input[type="text"]:focus { border-color: #4a9eff; }
     .mic-btn {
       width: 48px;
       height: 48px;
@@ -66,6 +64,7 @@
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
+      flex-shrink: 0;
     }
     .mic-btn.listening {
       background: #dc2626;
@@ -77,22 +76,18 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.7; }
     }
-    .chip-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
     .chip-label {
       font-size: 0.75rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: #64748b;
-      margin-bottom: 4px;
     }
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
     .chip {
       padding: 10px 16px;
       border-radius: 20px;
-      border: 2px solid transparent;
+      border: 2px solid #2d3748;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
@@ -101,20 +96,51 @@
       color: #94a3b8;
     }
     .chip.selected { color: white; }
-    .chip[data-value="Chef Collective"] { border-color: #2d3748; }
-    .chip[data-value="Chef Collective"].selected { background: #ea580c; border-color: #ea580c; }
-    .chip[data-value="Mother Tree"] { border-color: #2d3748; }
-    .chip[data-value="Mother Tree"].selected { background: #2563eb; border-color: #2563eb; }
-    .chip[data-value="Castanea Creek"] { border-color: #2d3748; }
-    .chip[data-value="Castanea Creek"].selected { background: #7c3aed; border-color: #7c3aed; }
-    .chip[data-value="Personal"] { border-color: #2d3748; }
-    .chip[data-value="Personal"].selected { background: #16a34a; border-color: #16a34a; }
-    .chip[data-value="Urgent"] { border-color: #2d3748; }
-    .chip[data-value="Urgent"].selected { background: #dc2626; border-color: #dc2626; }
-    .chip[data-value="High"] { border-color: #2d3748; }
-    .chip[data-value="High"].selected { background: #ea580c; border-color: #ea580c; }
-    .chip[data-value="Medium"] { border-color: #2d3748; }
-    .chip[data-value="Medium"].selected { background: #2563eb; border-color: #2563eb; }
+
+    /* Context colors */
+    .chip[data-value="Chef Collective"].selected  { background: #ea580c; border-color: #ea580c; }
+    .chip[data-value="Mother Tree"].selected      { background: #2563eb; border-color: #2563eb; }
+    .chip[data-value="Castanea Creek"].selected   { background: #7c3aed; border-color: #7c3aed; }
+    .chip[data-value="Personal"].selected         { background: #16a34a; border-color: #16a34a; }
+
+    /* Priority colors */
+    .chip[data-value="Urgent"].selected  { background: #dc2626; border-color: #dc2626; }
+    .chip[data-value="High"].selected    { background: #ea580c; border-color: #ea580c; }
+    .chip[data-value="Normal"].selected  { background: #2563eb; border-color: #2563eb; }
+    .chip[data-value="Medium"].selected  { background: #2563eb; border-color: #2563eb; }
+    .chip[data-value="Low"].selected     { background: #475569; border-color: #475569; }
+
+    /* Scope / Owner colors */
+    .chip[data-value="Team"].selected  { background: #0891b2; border-color: #0891b2; }
+    .chip[data-value="Mine"].selected  { background: #7c3aed; border-color: #7c3aed; }
+    .chip[data-value="Shane"].selected { background: #16a34a; border-color: #16a34a; }
+    .chip[data-value="James"].selected { background: #d97706; border-color: #d97706; }
+
+    /* Area chips — smaller text since there are many */
+    .chip.area-chip { font-size: 12px; padding: 8px 12px; }
+
+    /* CC fields section — animated reveal */
+    .cc-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.35s ease, opacity 0.25s ease;
+    }
+    .cc-fields.visible {
+      max-height: 600px;
+      opacity: 1;
+    }
+
+    /* Divider line above CC fields */
+    .cc-divider {
+      border: none;
+      border-top: 1px solid #2d3748;
+      margin: 0;
+    }
+
     .capture-btn {
       width: 100%;
       padding: 16px;
@@ -136,19 +162,21 @@
       color: #64748b;
     }
     .status.success { color: #4ade80; }
-    .status.error { color: #f87171; }
+    .status.error   { color: #f87171; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Task Capture</h1>
 
+    <!-- Task input -->
     <div class="input-row">
       <input type="text" id="taskInput" placeholder="What needs to be done?" autocomplete="off">
       <button class="mic-btn" id="micBtn">🎤</button>
     </div>
 
-    <div>
+    <!-- Context -->
+    <div class="field-group">
       <div class="chip-label">Context</div>
       <div class="chip-group" id="contextGroup">
         <button class="chip" data-value="Chef Collective">Chef Collective</button>
@@ -158,12 +186,50 @@
       </div>
     </div>
 
-    <div>
+    <!-- Priority (always visible, options change per context) -->
+    <div class="field-group">
       <div class="chip-label">Priority</div>
       <div class="chip-group" id="priorityGroup">
         <button class="chip" data-value="Urgent">Urgent</button>
         <button class="chip" data-value="High">High</button>
+        <button class="chip" data-value="Normal" hidden>Normal</button>
         <button class="chip" data-value="Medium">Medium</button>
+        <button class="chip" data-value="Low" hidden>Low</button>
+      </div>
+    </div>
+
+    <!-- CC-only fields (progressive disclosure) -->
+    <hr class="cc-divider" id="ccDivider" hidden>
+    <div class="cc-fields" id="ccFields">
+
+      <div class="field-group">
+        <div class="chip-label">Scope</div>
+        <div class="chip-group" id="scopeGroup">
+          <button class="chip" data-value="Team">Team</button>
+          <button class="chip" data-value="Mine">Mine</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="chip-label">Owner</div>
+        <div class="chip-group" id="ownerGroup">
+          <button class="chip" data-value="Shane">Shane</button>
+          <button class="chip" data-value="James">James</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="chip-label">Area <span style="color:#475569;font-size:0.7rem;text-transform:none;letter-spacing:0">(optional)</span></div>
+        <div class="chip-group" id="areaGroup">
+          <button class="chip area-chip" data-value="Sales & Customers">Sales & Customers</button>
+          <button class="chip area-chip" data-value="Sourcing & Vendors">Sourcing & Vendors</button>
+          <button class="chip area-chip" data-value="Operations & Production">Operations & Production</button>
+          <button class="chip area-chip" data-value="Finance & Bookkeeping">Finance & Bookkeeping</button>
+          <button class="chip area-chip" data-value="Team & HR">Team & HR</button>
+          <button class="chip area-chip" data-value="Legal & Compliance">Legal & Compliance</button>
+          <button class="chip area-chip" data-value="Strategy & Planning">Strategy & Planning</button>
+          <button class="chip area-chip" data-value="Admin">Admin</button>
+        </div>
       </div>
     </div>
 
@@ -172,43 +238,101 @@
   </div>
 
   <script>
-    let selectedContext = null;
+    let selectedContext  = null;
     let selectedPriority = null;
+    let selectedScope    = null;
+    let selectedOwner    = null;
+    let selectedArea     = null;
 
-    document.querySelectorAll('#contextGroup .chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('#contextGroup .chip').forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
-        selectedContext = chip.dataset.value;
+    // Generic single-select chip group
+    function wireGroup(groupId, onSelect) {
+      const group = document.getElementById(groupId);
+      group.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          onSelect(chip.dataset.value);
+        });
       });
+    }
+
+    // Area group allows deselect (tap again to clear)
+    function wireAreaGroup() {
+      const group = document.getElementById('areaGroup');
+      group.querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          if (chip.classList.contains('selected')) {
+            chip.classList.remove('selected');
+            selectedArea = null;
+          } else {
+            group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+            chip.classList.add('selected');
+            selectedArea = chip.dataset.value;
+          }
+        });
+      });
+    }
+
+    function setPriorityOptions(isCC) {
+      const pg = document.getElementById('priorityGroup');
+      // Reset selection when switching context
+      pg.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      selectedPriority = null;
+
+      const show = isCC
+        ? ['Urgent', 'High', 'Normal', 'Low']
+        : ['Urgent', 'High', 'Medium'];
+
+      pg.querySelectorAll('.chip').forEach(chip => {
+        chip.hidden = !show.includes(chip.dataset.value);
+      });
+    }
+
+    function setCCFields(visible) {
+      const ccFields  = document.getElementById('ccFields');
+      const ccDivider = document.getElementById('ccDivider');
+      ccDivider.hidden = !visible;
+      if (visible) {
+        ccFields.classList.add('visible');
+      } else {
+        ccFields.classList.remove('visible');
+        // Clear CC selections
+        ['scopeGroup','ownerGroup','areaGroup'].forEach(id => {
+          document.getElementById(id).querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        });
+        selectedScope = selectedOwner = selectedArea = null;
+      }
+    }
+
+    wireGroup('contextGroup', val => {
+      selectedContext = val;
+      const isCC = val === 'Chef Collective';
+      setPriorityOptions(isCC);
+      setCCFields(isCC);
     });
 
-    document.querySelectorAll('#priorityGroup .chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        document.querySelectorAll('#priorityGroup .chip').forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
-        selectedPriority = chip.dataset.value;
-      });
-    });
+    wireGroup('priorityGroup', val => { selectedPriority = val; });
+    wireGroup('scopeGroup',    val => { selectedScope    = val; });
+    wireGroup('ownerGroup',    val => { selectedOwner    = val; });
+    wireAreaGroup();
 
     // Voice input
-    const micBtn = document.getElementById('micBtn');
+    const micBtn    = document.getElementById('micBtn');
     const taskInput = document.getElementById('taskInput');
     let recognition = null;
 
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognition = new SpeechRecognition();
-      recognition.continuous = false;
+      recognition.continuous    = false;
       recognition.interimResults = false;
 
-      recognition.onresult = (event) => {
-        taskInput.value = event.results[0][0].transcript;
+      recognition.onresult = e => {
+        taskInput.value = e.results[0][0].transcript;
         micBtn.classList.remove('listening');
       };
-
       recognition.onerror = () => micBtn.classList.remove('listening');
-      recognition.onend = () => micBtn.classList.remove('listening');
+      recognition.onend   = () => micBtn.classList.remove('listening');
 
       micBtn.addEventListener('click', () => {
         if (micBtn.classList.contains('listening')) {
@@ -224,44 +348,58 @@
 
     // Capture
     const captureBtn = document.getElementById('captureBtn');
-    const status = document.getElementById('status');
+    const statusEl   = document.getElementById('status');
 
     captureBtn.addEventListener('click', async () => {
       const task = taskInput.value.trim();
+      const isCC = selectedContext === 'Chef Collective';
+
       if (!task || !selectedContext || !selectedPriority) {
-        status.textContent = 'Fill in all fields';
-        status.className = 'status error';
+        statusEl.textContent = 'Fill in task, context and priority';
+        statusEl.className = 'status error';
+        return;
+      }
+      if (isCC && (!selectedScope || !selectedOwner)) {
+        statusEl.textContent = 'Choose Scope and Owner for CC tasks';
+        statusEl.className = 'status error';
         return;
       }
 
       captureBtn.disabled = true;
-      status.textContent = 'Sending...';
-      status.className = 'status';
+      statusEl.textContent = 'Sending…';
+      statusEl.className = 'status';
 
       try {
-        const res = await fetch('/capture', {
+        const payload = { task, context: selectedContext, priority: selectedPriority };
+        if (isCC) {
+          payload.scope = selectedScope;
+          payload.owner = selectedOwner;
+          if (selectedArea) payload.area = selectedArea;
+        }
+
+        const res  = await fetch('/capture', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task, context: selectedContext, priority: selectedPriority })
+          body: JSON.stringify(payload)
         });
-
         const data = await res.json();
 
         if (res.ok) {
-          status.textContent = 'Captured!';
-          status.className = 'status success';
+          statusEl.textContent = '✓ Captured!';
+          statusEl.className = 'status success';
           taskInput.value = '';
           document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-          selectedContext = null;
-          selectedPriority = null;
-          setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 2000);
+          selectedContext = selectedPriority = selectedScope = selectedOwner = selectedArea = null;
+          setCCFields(false);
+          setPriorityOptions(false);
+          setTimeout(() => { statusEl.textContent = ''; statusEl.className = 'status'; }, 2500);
         } else {
-          status.textContent = data.error || 'Failed';
-          status.className = 'status error';
+          statusEl.textContent = data.error || 'Failed';
+          statusEl.className = 'status error';
         }
-      } catch (err) {
-        status.textContent = 'Network error';
-        status.className = 'status error';
+      } catch {
+        statusEl.textContent = 'Network error';
+        statusEl.className = 'status error';
       }
 
       captureBtn.disabled = false;
